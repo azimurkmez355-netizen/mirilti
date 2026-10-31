@@ -49,10 +49,18 @@ export function runSmokeTest(loggedIn: boolean): void {
       return JSON.stringify({ cls: f.className, style: f.getAttribute('style'), transform: cs.transform, anim: cs.animationName, dur: cs.animationDuration, from: cs.getPropertyValue('--from') });
     })()`)
     console.log('[smoke] ilerleme:', probe)
+    await captureTabs()
 
     const queue = await sendCommand({ type: 'getQueue' })
     console.log('[smoke] sıra:', queue.ok ? `${(queue.data as unknown[]).length} öğe` : queue.error)
     if (queue.ok) console.log('[smoke] sıra[0..2]:', JSON.stringify((queue.data as unknown[]).slice(0, 3)))
+    const other = sections.flatMap((x) => x.items).filter((i) => i.type === 'song' && i.play)[1]
+    if (other) {
+      const added = await sendCommand({ type: 'addToQueue', target: other.play as { videoId: string } })
+      await sleep(1000)
+      const q2 = await sendCommand({ type: 'getQueue' })
+      console.log('[smoke] sıraya ekle:', added.ok ? 'tamam' : added.error, '→', q2.ok ? (q2.data as { title: string }[]).map((q) => q.title).join(' | ') : q2.error)
+    }
 
     if (s.track?.videoId) {
       const lyrics = await sendCommand({ type: 'getLyrics', videoId: s.track.videoId })
@@ -96,4 +104,28 @@ export async function captureWidget(name: string): Promise<void> {
   const img = await win.webContents.capturePage()
   writeFileSync(`.smoke/${name}.png`, img.toPNG())
   console.log(`[smoke] görüntü: .smoke/${name}.png`)
+}
+
+/** Widget sekmelerini sırayla açıp görüntülerini alır */
+async function captureTabs(): Promise<void> {
+  const wc = getWidgetWindow()?.webContents
+  if (!wc) return
+  const click = (title: string): Promise<unknown> =>
+    wc.executeJavaScript(`document.querySelector('.player button[title="${title}"]')?.click()`)
+  await click('Ara')
+  await sleep(500)
+  // React denetimli input'a değer yazmak için yerel setter + input olayı
+  await wc.executeJavaScript(`(() => {
+    const input = document.querySelector('.search-box input');
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    setter.call(input, 'Sezen Aksu'); input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`)
+  await sleep(3500)
+  await captureWidget('tab-search')
+  await click('Sıradaki')
+  await sleep(1200)
+  await captureWidget('tab-queue')
+  await click('Kitaplık')
+  await sleep(2500)
+  await captureWidget('tab-library')
 }

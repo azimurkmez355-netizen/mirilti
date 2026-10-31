@@ -222,7 +222,7 @@ function Widget({ settings, layout, state, palette }: WidgetProps): React.JSX.El
               }}
               aria-hidden={view !== 'full'}
             >
-              {tab && <TabContent tab={tab} state={state} active={view === 'full'} />}
+              <TabContent tab={tab} state={state} active={view === 'full'} />
             </div>
           </div>
         </div>
