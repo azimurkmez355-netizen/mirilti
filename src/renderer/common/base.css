@@ -1,0 +1,63 @@
+/* Tüm arayüzlerin ortak temeli */
+
+/* Renk değişkenleri kayıtlı: böylece CSS bunlar arasında yumuşak geçiş (transition) yapabilir */
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #8b5cf6;
+}
+@property --bg-from {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #1a1530;
+}
+@property --bg-to {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0c0c11;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter Variable', 'Segoe UI Variable', 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+input {
+  font: inherit;
+}
+
+/* İnce kaydırma çubukları */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 140, 0.35);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(128, 128, 140, 0.55);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Not: Animasyonlar Windows ayarına değil, uygulamanın kendi "Animasyon hızı" ayarına bağlıdır. */

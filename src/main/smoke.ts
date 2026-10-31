@@ -6,7 +6,7 @@
 import { app } from 'electron'
 import { getPlayerState, sendCommand } from './player-bridge'
 import { getPlayerWindow, playerEvents } from './windows/player'
-import { getWidgetWindow } from './windows/widget'
+import { getWidgetWindow, toggleWidgetOpen } from './windows/widget'
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
@@ -39,7 +39,16 @@ export function runSmokeTest(loggedIn: boolean): void {
     const s = getPlayerState()
     console.log('[smoke] durum:', JSON.stringify({ track: s.track, isPlaying: s.isPlaying, volume: s.volume, like: s.likeStatus, repeat: s.repeat, issues: s.adapterIssues, loggedIn: s.loggedIn }))
 
-    await captureWidget('widget')
+    await captureWidget('pill')
+    toggleWidgetOpen()
+    await sleep(900)
+    await captureWidget('open')
+    const probe = await getWidgetWindow()?.webContents.executeJavaScript(`(() => {
+      const f = document.querySelector('.progress-fill'); if (!f) return 'yok';
+      const cs = getComputedStyle(f);
+      return JSON.stringify({ cls: f.className, style: f.getAttribute('style'), transform: cs.transform, anim: cs.animationName, dur: cs.animationDuration, from: cs.getPropertyValue('--from') });
+    })()`)
+    console.log('[smoke] ilerleme:', probe)
 
     const queue = await sendCommand({ type: 'getQueue' })
     console.log('[smoke] sıra:', queue.ok ? `${(queue.data as unknown[]).length} öğe` : queue.error)

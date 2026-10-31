@@ -149,6 +149,8 @@ export interface WidgetLayout {
   side: DockSide
   /** Pill'in yönü: kenarlarda dikey/yatay ince şerit, köşe/yüzende yuvarlak balon */
   pillShape: 'vertical' | 'horizontal' | 'bubble'
+  /** Sekme alanı oynatıcının üstünde mi (alt kenara yakın yerleşimlerde) */
+  growsUp: boolean
   /** Ölçek (widget içeriği bu oranla büyütülür) */
   scale: number
   /** Yerel Acrylic modu: pencere görünen şekle göre yeniden boyutlanır */

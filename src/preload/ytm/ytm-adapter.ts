@@ -82,9 +82,6 @@ type Json = any
   const SEL = {
     player: '#movie_player',
     playerBar: 'ytmusic-player-bar',
-    barTitle: 'ytmusic-player-bar .title',
-    barByline: 'ytmusic-player-bar .byline',
-    barImage: 'ytmusic-player-bar .image',
     /** Reklam oynarken oynatıcıya eklenen sınıf */
     adShowingClass: 'ad-showing',
     playPauseButton: 'ytmusic-player-bar #play-pause-button',
@@ -129,8 +126,8 @@ type Json = any
     const player = getPlayer()
     const data = safe(() => player?.getVideoData?.())
     const videoId = data?.video_id ?? ''
-    // Reklam sırasında mediaSession reklamı anlatır; şarkı bilgisini oynatıcı çubuğundan al.
-    if (isAdPlaying()) return readTrackFromBar(videoId)
+    // Reklam sırasında mediaSession reklamı anlatır; şarkı bilgisini sıradan al.
+    if (isAdPlaying()) return readTrackDuringAd()
     const meta = navigator.mediaSession?.metadata ?? null
     const title = meta?.title || data?.title || ''
     if (!title) return null
@@ -139,7 +136,7 @@ type Json = any
     let duration = video && Number.isFinite(video.duration) ? video.duration : 0
     if (!duration) duration = safe(() => player?.getDuration?.()) ?? 0
 
-    return {
+    lastRealTrack = {
       videoId,
       title,
       artist: meta?.artist || data?.author || '',
@@ -147,21 +144,30 @@ type Json = any
       coverUrl: pickArtwork(meta?.artwork) || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
       duration: Math.round(duration)
     }
+    return lastRealTrack
   }
 
-  function readTrackFromBar(videoId: string): TrackInfo | null {
-    const title = $(SEL.barTitle)?.textContent?.trim() ?? ''
-    if (!title) return null
-    // Byline: "Sanatçı • Albüm • Yıl"
-    const parts = ($(SEL.barByline)?.textContent ?? '').split('•').map((x) => x.trim())
+  /**
+   * Reklam sırasında hem mediaSession hem oynatıcı çubuğu reklamı gösterir.
+   * Asıl şarkıyı sıra listesindeki "şu an çalan" öğeden al; o da yoksa son bilinen şarkıda kal.
+   */
+  let lastRealTrack: TrackInfo | null = null
+  function readTrackDuringAd(): TrackInfo | null {
+    const current = safe(readQueue)?.find((q) => q.isCurrent)
+    if (!current) return lastRealTrack
     return {
-      videoId,
-      title,
-      artist: parts[0] ?? '',
-      album: parts[1] ?? '',
-      coverUrl: $<HTMLImageElement>(SEL.barImage)?.src || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
-      duration: 0
+      videoId: current.videoId,
+      title: current.title,
+      artist: current.artist,
+      album: lastRealTrack?.videoId === current.videoId ? lastRealTrack.album : '',
+      // Küçük resmi büyük boyutla iste
+      coverUrl: current.thumbnail.replace(/=w\d+-h\d+/, '=w544-h544'),
+      duration: parseDuration(current.durationText)
     }
+  }
+
+  function parseDuration(text: string): number {
+    return text.split(':').reduce((acc, part) => acc * 60 + (Number(part) || 0), 0)
   }
 
   /** mediaSession kapak listesinden en büyüğünü seçer */
