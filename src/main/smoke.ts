@@ -128,4 +128,7 @@ async function captureTabs(): Promise<void> {
   await click('Kitaplık')
   await sleep(2500)
   await captureWidget('tab-library')
+  await click('Şarkı sözleri')
+  await sleep(5000)
+  await captureWidget('tab-lyrics')
 }

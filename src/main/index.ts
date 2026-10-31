@@ -6,6 +6,7 @@ import { app, ipcMain } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { CoverPalette } from '../shared/types'
 import { extractPalette } from './colors'
+import { initLyrics } from './lyrics'
 import { bridgeEvents, broadcast, getPlayerState, initPlayerBridge, sendCommand } from './player-bridge'
 import { initSettingsIpc } from './settings-ipc'
 import { runSmokeTest, smokeSeconds } from './smoke'
@@ -32,6 +33,7 @@ async function start(): Promise<void> {
   initSettingsIpc()
   initWidgetIpc()
   initPalette()
+  initLyrics()
 
   ipcMain.on(IPC.appOpenLogin, () => openLoginWindow())
   ipcMain.on(IPC.appOpenPlayer, () => showPlayerWindow())

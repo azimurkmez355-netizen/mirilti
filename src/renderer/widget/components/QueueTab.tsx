@@ -1,6 +1,7 @@
 /** "Sıradaki" listesi: tıklanan şarkıya geçer; açılınca çalan şarkıya kaydırır */
 import { useEffect, useRef } from 'react'
 import { ListMusic } from 'lucide-react'
+import { scrollToCenter } from '../../common/format'
 import { useQueue } from '../../common/hooks'
 import { EmptyState, ListRow } from './ListRow'
 import { Wave } from './Wave'
@@ -13,8 +14,9 @@ export function QueueTab({ active }: { active: boolean }): React.JSX.Element {
   // Sekme açılınca ya da şarkı değişince çalan öğeyi görünür yap
   useEffect(() => {
     if (!active || currentIndex < 0) return
-    const el = listRef.current?.querySelector<HTMLElement>('.row.is-current')
-    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    const list = listRef.current
+    const el = list?.querySelector<HTMLElement>('.row.is-current')
+    if (list && el) scrollToCenter(list, el)
   }, [active, currentIndex])
 
   if (!queue.length) {
