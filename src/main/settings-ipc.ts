@@ -8,6 +8,7 @@ import { IPC, type Result, type SystemInfo } from '../shared/ipc'
 import { defaultSettings, type SettingsPatch } from '../shared/settings'
 import { broadcast } from './player-bridge'
 import { getSettings, onSettingsChange, replaceSettings, updateSettings } from './store'
+import { supportsNativeMaterial } from './windows/widget'
 
 /** Kısayol modülü kaydedilemeyen kısayolları buraya yazar */
 let shortcutErrors: string[] = []
@@ -64,6 +65,7 @@ export function initSettingsIpc(): void {
         primary: d.id === primary
       })),
       shortcutErrors,
+      supportsNativeMaterial: supportsNativeMaterial(),
       isPackaged: app.isPackaged,
       version: app.getVersion()
     }

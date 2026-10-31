@@ -62,6 +62,8 @@ export const IPC = {
   widgetDragEnd: 'widget:drag-end',
 
   appOpenSettings: 'app:open-settings',
+  /** ayarlar -> ana: widget'ı önizleme için açık tut */
+  appPreviewWidget: 'app:preview-widget',
   appOpenLogin: 'app:open-login',
   appOpenPlayer: 'app:open-player',
   appReloadPlayer: 'app:reload-player'
@@ -109,6 +111,8 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: string }
 export interface SystemInfo {
   displays: { id: number; label: string; primary: boolean }[]
   shortcutErrors: string[]
+  /** Windows 11 22H2+ yerel Acrylic destekliyor mu */
+  supportsNativeMaterial: boolean
   isPackaged: boolean
   version: string
 }
@@ -146,6 +150,7 @@ export interface MiriltiApi {
   dragEnd(): void
 
   openSettings(): void
+  previewWidget(pinned: boolean): void
   openLogin(): void
   openPlayer(): void
   reloadPlayer(): void

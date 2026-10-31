@@ -40,6 +40,7 @@ const api: MiriltiApi = {
   dragEnd: () => ipcRenderer.send(IPC.widgetDragEnd),
 
   openSettings: () => ipcRenderer.send(IPC.appOpenSettings),
+  previewWidget: (pinned) => ipcRenderer.send(IPC.appPreviewWidget, pinned),
   openLogin: () => ipcRenderer.send(IPC.appOpenLogin),
   openPlayer: () => ipcRenderer.send(IPC.appOpenPlayer),
   reloadPlayer: () => ipcRenderer.send(IPC.appReloadPlayer)

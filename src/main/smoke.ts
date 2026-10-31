@@ -7,6 +7,9 @@ import { app } from 'electron'
 import { getPlayerState, sendCommand } from './player-bridge'
 import { getPlayerWindow, playerEvents } from './windows/player'
 import { getWidgetWindow, toggleWidgetOpen } from './windows/widget'
+import { getSettingsWindow, openSettingsWindow } from './windows/settings'
+import { getSettings, replaceSettings, updateSettings } from './store'
+import type { DockMode } from '../shared/settings'
 
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms))
 
@@ -50,6 +53,7 @@ export function runSmokeTest(loggedIn: boolean): void {
     })()`)
     console.log('[smoke] ilerleme:', probe)
     await captureTabs()
+    await captureModes()
 
     const queue = await sendCommand({ type: 'getQueue' })
     console.log('[smoke] sıra:', queue.ok ? `${(queue.data as unknown[]).length} öğe` : queue.error)
@@ -131,4 +135,30 @@ async function captureTabs(): Promise<void> {
   await click('Şarkı sözleri')
   await sleep(5000)
   await captureWidget('tab-lyrics')
+}
+
+/** Farklı konum modlarını ve ayarlar penceresini dener; sonunda ayarları geri yükler */
+async function captureModes(): Promise<void> {
+  const original = getSettings()
+  try {
+    openSettingsWindow()
+    await sleep(2000)
+    const sw = getSettingsWindow()
+    if (sw) {
+      const { writeFileSync } = await import('node:fs')
+      writeFileSync('.smoke/settings.png', (await sw.webContents.capturePage()).toPNG())
+      await sw.webContents.executeJavaScript(`[...document.querySelectorAll('.nav > button')][1].click()`)
+      await sleep(600)
+      writeFileSync('.smoke/settings-appearance.png', (await sw.webContents.capturePage()).toPNG())
+      console.log('[smoke] görüntü: .smoke/settings*.png')
+    }
+    const modes: DockMode[] = ['edge-top', 'corner-bottom-left', 'floating']
+    for (const mode of modes) {
+      updateSettings({ position: { mode }, appearance: { colorScheme: mode === 'floating' ? 'light' : 'dark' } })
+      await sleep(900)
+      await captureWidget(`mode-${mode}`)
+    }
+  } finally {
+    replaceSettings(original)
+  }
 }

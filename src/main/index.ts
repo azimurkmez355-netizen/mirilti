@@ -9,11 +9,13 @@ import { extractPalette } from './colors'
 import { initLyrics } from './lyrics'
 import { bridgeEvents, broadcast, getPlayerState, initPlayerBridge, sendCommand } from './player-bridge'
 import { initSettingsIpc } from './settings-ipc'
+import { flushSettings } from './store'
 import { runSmokeTest, smokeSeconds } from './smoke'
 import { createTray, updateTray } from './tray'
 import { openLoginWindow } from './windows/login'
 import { createPlayerWindow, hasGoogleSession, markQuitting, reloadPlayer, showPlayerWindow } from './windows/player'
-import { createWidgetWindow, initWidgetIpc, isWidgetVisible, toggleWidgetVisible } from './windows/widget'
+import { openSettingsWindow } from './windows/settings'
+import { createWidgetWindow, initWidgetIpc, isWidgetVisible, pinWidgetOpen, toggleWidgetVisible } from './windows/widget'
 
 // Oynat komutları kullanıcı tıklaması olmadan da çalışabilsin (sayfa gizli pencerede).
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
@@ -38,6 +40,8 @@ async function start(): Promise<void> {
   ipcMain.on(IPC.appOpenLogin, () => openLoginWindow())
   ipcMain.on(IPC.appOpenPlayer, () => showPlayerWindow())
   ipcMain.on(IPC.appReloadPlayer, () => reloadPlayer())
+  ipcMain.on(IPC.appOpenSettings, () => openSettingsWindow())
+  ipcMain.on(IPC.appPreviewWidget, (_e, pinned: unknown) => pinWidgetOpen(pinned === true))
 
   createPlayerWindow()
   createWidgetWindow()
@@ -48,7 +52,7 @@ async function start(): Promise<void> {
     previous: () => void sendCommand({ type: 'previous' }),
     toggleWidget: toggleWidgetVisible,
     isWidgetVisible,
-    openSettings: () => {},
+    openSettings: openSettingsWindow,
     openPlayer: showPlayerWindow,
     openLogin: openLoginWindow,
     quit: () => app.quit()
@@ -85,4 +89,7 @@ app.on('window-all-closed', () => {
   /* bilerek boş: çıkış yalnızca tepsi menüsünden */
 })
 
-app.on('before-quit', () => markQuitting())
+app.on('before-quit', () => {
+  markQuitting()
+  flushSettings()
+})

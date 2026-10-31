@@ -25,16 +25,30 @@ export function getSettings(): Settings {
 export function updateSettings(patch: SettingsPatch): Settings {
   const previous = current
   current = mergeSettings(current, patch)
-  store.set('settings', current)
+  scheduleSave()
   events.emit('change', current, previous)
   return current
+}
+
+// Kaydırıcı sürüklenirken her adımda diske yazmamak için kısa gecikmeli kayıt
+let saveTimer: NodeJS.Timeout | null = null
+function scheduleSave(): void {
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = setTimeout(flushSettings, 400)
+}
+
+/** Bekleyen kaydı hemen yaz (uygulama kapanırken çağrılır) */
+export function flushSettings(): void {
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = null
+  store.set('settings', current)
 }
 
 /** Tüm ayarları değiştirir (sıfırlama / içe aktarma) */
 export function replaceSettings(next: unknown): Settings {
   const previous = current
   current = mergeSettings(defaultSettings, next)
-  store.set('settings', current)
+  flushSettings()
   events.emit('change', current, previous)
   return current
 }
