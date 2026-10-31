@@ -20,7 +20,8 @@ export function smokeSeconds(): number {
 export function runSmokeTest(loggedIn: boolean): void {
   const seconds = smokeSeconds()
   console.log(`[smoke] google oturumu: ${loggedIn}`)
-  getPlayerWindow()?.webContents.setAudioMuted(true)
+  // MIRILTI_SMOKE_VOLUME0=1: pencereyi susturmak yerine oynatıcı sesini 0 yap (SMTC testi için)
+  if (!process.env['MIRILTI_SMOKE_VOLUME0']) getPlayerWindow()?.webContents.setAudioMuted(true)
   setTimeout(() => app.quit(), seconds * 1000)
 
   playerEvents.once('loaded', async () => {
@@ -36,12 +37,14 @@ export function runSmokeTest(loggedIn: boolean): void {
     console.log('[smoke] ilk şarkı:', song?.title, JSON.stringify(song?.play))
     if (!song) return
 
+    if (process.env['MIRILTI_SMOKE_VOLUME0']) await sendCommand({ type: 'setVolume', volume: 0 })
     const played = await sendCommand({ type: 'playTarget', target: song.play as { videoId: string } })
     console.log('[smoke] çal:', played.ok ? 'tamam' : played.error)
     await sleep(6000)
     const s = getPlayerState()
     console.log('[smoke] durum:', JSON.stringify({ track: s.track, isPlaying: s.isPlaying, volume: s.volume, like: s.likeStatus, repeat: s.repeat, issues: s.adapterIssues, loggedIn: s.loggedIn }))
 
+    await checkSystem()
     await captureWidget('pill')
     toggleWidgetOpen()
     await sleep(900)
@@ -80,6 +83,8 @@ export function runSmokeTest(loggedIn: boolean): void {
     await sendCommand({ type: 'pause' })
     await sleep(800)
     console.log('[smoke] duraklat → isPlaying:', getPlayerState().isPlaying)
+    // YouTube Music ses düzeyini oturuma kaydeder: testten sonra varsayılana döndür
+    await sendCommand({ type: 'setVolume', volume: 100 })
   })
 }
 
@@ -161,4 +166,23 @@ async function captureModes(): Promise<void> {
   } finally {
     replaceSettings(original)
   }
+}
+
+/** Aşama 7 kontrolleri: tam ekran API'si, kısayollar ve Windows medya kontrolleri (SMTC) */
+async function checkSystem(): Promise<void> {
+  const koffi = (await import('koffi')).default
+  const fn = koffi.load('shell32.dll').func('long __stdcall SHQueryUserNotificationState(_Out_ int *pquns)')
+  const out = [0]
+  console.log('[smoke] tam ekran API: hr =', fn(out), 'durum =', out[0])
+  const { globalShortcut } = await import('electron')
+  console.log('[smoke] kısayol kayıtlı (Alt+Shift+M):', globalShortcut.isRegistered('Alt+Shift+M'))
+  const { execFile } = await import('node:child_process')
+  const { join } = await import('node:path')
+  await new Promise<void>((resolve) => {
+    execFile('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', join(app.getAppPath(), 'scripts/smtc-sessions.ps1')], { timeout: 20000 }, (err, stdout, stderr) => {
+      console.log('[smoke] SMTC oturumları:', err ? `HATA ${stderr || err.message}` : `
+${stdout.trim() || '(yok)'}`)
+      resolve()
+    })
+  })
 }

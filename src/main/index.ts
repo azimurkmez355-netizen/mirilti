@@ -8,7 +8,10 @@ import type { CoverPalette } from '../shared/types'
 import { extractPalette } from './colors'
 import { initLyrics } from './lyrics'
 import { bridgeEvents, broadcast, getPlayerState, initPlayerBridge, sendCommand } from './player-bridge'
+import { initFullscreenWatcher } from './fullscreen'
 import { initSettingsIpc } from './settings-ipc'
+import { initShortcuts } from './shortcuts'
+import { initSystemIntegration } from './system'
 import { flushSettings } from './store'
 import { runSmokeTest, smokeSeconds } from './smoke'
 import { createTray, updateTray } from './tray'
@@ -45,6 +48,9 @@ async function start(): Promise<void> {
 
   createPlayerWindow()
   createWidgetWindow()
+  initShortcuts()
+  initFullscreenWatcher()
+  initSystemIntegration()
 
   createTray({
     togglePlay: () => void sendCommand({ type: 'togglePlay' }),
