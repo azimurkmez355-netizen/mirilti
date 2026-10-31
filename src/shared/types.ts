@@ -28,6 +28,8 @@ export interface PlayerState {
   loggedIn: boolean | null
   track: TrackInfo | null
   isPlaying: boolean
+  /** Şu an reklam oynuyor mu (yalnızca bilgi amaçlı gösterilir; engellenmez) */
+  adPlaying: boolean
   /** Son ölçülen konum (sn) ve ölçüm anı (Date.now()). Arayüz aradaki süreyi kendisi hesaplar. */
   position: number
   positionAt: number
@@ -46,6 +48,7 @@ export const initialPlayerState: PlayerState = {
   loggedIn: null,
   track: null,
   isPlaying: false,
+  adPlaying: false,
   position: 0,
   positionAt: 0,
   playbackRate: 1,
