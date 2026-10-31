@@ -1,0 +1,47 @@
+# Windows kurulum dosyası (NSIS) yapılandırması — `npm run build`
+appId: com.mirilti.app
+productName: Mırıltı
+copyright: Copyright © 2026 Ali Azim Ürkmez
+
+directories:
+  buildResources: resources
+  output: dist
+
+# Pakete yalnızca derlenmiş çıktı girer; kaynak kod ve geliştirme dosyaları girmez
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+
+# Tepsi ve uygulama ikonları process.resourcesPath altına kopyalanır (src/main/paths.ts)
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - icon.png
+      - tray.png
+      - tray@2x.png
+
+# koffi'nin yerel modülü asar arşivinin dışında olmalı
+asarUnpack:
+  - '**/*.node'
+
+win:
+  # Türkçe karakterli dosya adı sorun çıkarmasın diye çalıştırılabilir dosya ASCII
+  executableName: Mirilti
+  icon: resources/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Mırıltı
+  artifactName: Mirilti-Kurulum-${version}.${ext}
+  # Kaldırınca ayarlar ve Google oturumu silinmesin
+  deleteAppDataOnUninstall: false
