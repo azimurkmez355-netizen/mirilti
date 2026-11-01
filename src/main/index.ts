@@ -13,6 +13,7 @@ import { initFullscreenWatcher } from './fullscreen'
 import { initSettingsIpc } from './settings-ipc'
 import { initShortcuts } from './shortcuts'
 import { initSystemIntegration } from './system'
+import { quitApp } from './quit'
 import { flushSettings } from './store'
 import { runSmokeTest, smokeSeconds } from './smoke'
 import { createTray, updateTray } from './tray'
@@ -66,7 +67,7 @@ async function start(): Promise<void> {
     openSettings: openSettingsWindow,
     openPlayer: showPlayerWindow,
     openLogin: openLoginWindow,
-    quit: () => app.quit()
+    quit: quitApp
   })
   bridgeEvents.on('state', updateTray)
 

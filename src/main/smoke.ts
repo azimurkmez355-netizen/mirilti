@@ -5,6 +5,7 @@
  */
 import { app } from 'electron'
 import { getPlayerState, sendCommand } from './player-bridge'
+import { quitApp } from './quit'
 import { getPlayerWindow, playerEvents } from './windows/player'
 import { getWidgetWindow, toggleWidgetOpen } from './windows/widget'
 import { getSettingsWindow, openSettingsWindow } from './windows/settings'
@@ -22,7 +23,8 @@ export function runSmokeTest(loggedIn: boolean): void {
   console.log(`[smoke] google oturumu: ${loggedIn}`)
   // MIRILTI_SMOKE_VOLUME0=1: pencereyi susturmak yerine oynatıcı sesini 0 yap (SMTC testi için)
   if (!process.env['MIRILTI_SMOKE_VOLUME0']) getPlayerWindow()?.webContents.setAudioMuted(true)
-  setTimeout(() => app.quit(), seconds * 1000)
+  // Tepsideki "Çıkış" ile aynı yol: çıkışın kendisi de test edilmiş olur
+  setTimeout(quitApp, seconds * 1000)
 
   playerEvents.once('loaded', async () => {
     console.log('[smoke] YouTube Music yüklendi')

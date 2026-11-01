@@ -1,7 +1,7 @@
 {
   "name": "mirilti",
   "productName": "Mırıltı",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "YouTube Music için Windows masaüstü mini oynatıcı",
   "main": "./out/main/index.js",
   "author": "Ali Azim Ürkmez",

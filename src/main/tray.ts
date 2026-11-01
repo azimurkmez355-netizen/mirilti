@@ -48,6 +48,12 @@ export function updateTray(state: PlayerState): void {
   rebuildMenu(state)
 }
 
+/** Çıkışta simgeyi hemen kaldır (Windows'ta tepside "hayalet" simge kalmasın) */
+export function destroyTray(): void {
+  tray?.destroy()
+  tray = null
+}
+
 /** Widget görünürlüğü değişince menüdeki etiketi tazele */
 export function refreshTrayMenu(): void {
   rebuildMenu(lastState)
