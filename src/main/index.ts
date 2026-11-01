@@ -2,6 +2,7 @@
  * Mırıltı — ana süreç giriş noktası.
  * Uygulamanın yaşam döngüsü: tek örnek kilidi, pencerelerin oluşturulması, modüllerin bağlanması.
  */
+import { join } from 'node:path'
 import { app, ipcMain } from 'electron'
 import { IPC } from '../shared/ipc'
 import type { CoverPalette } from '../shared/types'
@@ -19,6 +20,10 @@ import { openLoginWindow } from './windows/login'
 import { createPlayerWindow, hasGoogleSession, markQuitting, reloadPlayer, showPlayerWindow } from './windows/player'
 import { openSettingsWindow } from './windows/settings'
 import { createWidgetWindow, initWidgetIpc, isWidgetVisible, pinWidgetOpen, toggleWidgetVisible } from './windows/widget'
+
+// Smoke testi ayrı bir veri klasörü kullanır: çalışan Mırıltı'ya, ayarlara ve Google oturumuna dokunmaz.
+// (Tek örnek kilidi de veri klasörüne bağlı olduğu için kurulu sürüm açıkken test çalışabilir.)
+if (smokeSeconds()) app.setPath('userData', join(app.getPath('temp'), 'mirilti-smoke'))
 
 // Oynat komutları kullanıcı tıklaması olmadan da çalışabilsin (sayfa gizli pencerede).
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')

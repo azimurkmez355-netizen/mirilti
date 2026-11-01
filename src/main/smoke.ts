@@ -46,9 +46,28 @@ export function runSmokeTest(loggedIn: boolean): void {
 
     await checkSystem()
     await captureWidget('pill')
+    // Açılma animasyonunun kare sürelerini ölç
+    const wc = getWidgetWindow()!.webContents
+    void wc.executeJavaScript(`new Promise((done) => {
+      const t = []; let last = performance.now(); const end = last + 600;
+      const f = (now) => { t.push(now - last); last = now; now < end ? requestAnimationFrame(f) : (window.__frames = t, done()); };
+      requestAnimationFrame(f);
+    })`)
     toggleWidgetOpen()
     await sleep(900)
+    const frames = (await wc.executeJavaScript('window.__frames')) as number[]
+    const sorted = [...frames].sort((x, y) => x - y)
+    console.log('[smoke] açılma kareleri:', frames.length, 'kare, ortalama', (frames.reduce((x, y) => x + y, 0) / frames.length).toFixed(1), 'ms, en kötü', sorted.at(-1)?.toFixed(1), 'ms')
     await captureWidget('open')
+    // Fare tekerleğiyle 3 adım ses kıs ve göstergeyi yakala
+    for (let i = 0; i < 3; i++) {
+      await wc.executeJavaScript(`document.querySelector('.surface').dispatchEvent(new WheelEvent('wheel', { deltaY: 100, bubbles: true }))`)
+      await sleep(80)
+    }
+    await sleep(150)
+    await captureWidget('volume-osd')
+    await sleep(900)
+    console.log('[smoke] tekerlek sonrası ses:', getPlayerState().volume)
     const probe = await getWidgetWindow()?.webContents.executeJavaScript(`(() => {
       const f = document.querySelector('.progress-fill'); if (!f) return 'yok';
       const cs = getComputedStyle(f);

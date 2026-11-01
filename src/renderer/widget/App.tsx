@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { Settings } from '../../shared/settings'
 import type { CoverPalette, PlayerState, Rect, WidgetLayout, WidgetView } from '../../shared/types'
-import { useLayout, usePalette, usePlayerState, useSettings } from '../common/hooks'
+import { useLayout, usePalette, usePlayerState, useSettings, useVolume } from '../common/hooks'
 import { themeVars } from '../common/theme'
 import { Backdrop } from './components/Backdrop'
 import { Pill } from './components/Pill'
@@ -39,6 +39,17 @@ function Widget({ settings, layout, state, palette }: WidgetProps): React.JSX.El
   const closeTimer = useRef<number | undefined>(undefined)
   const surfaceRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef(false)
+  const volume = useVolume(state)
+  const lastWheel = useRef(0)
+  // Tekerlekle ses değişince kısa süre görünen gösterge
+  const [volumeOsd, setVolumeOsd] = useState<{ id: number } | null>(null)
+  const osdTimer = useRef<number | undefined>(undefined)
+  const showVolumeOsd = (): void => {
+    setVolumeOsd((o) => o ?? { id: Date.now() })
+    window.clearTimeout(osdTimer.current)
+    osdTimer.current = window.setTimeout(() => setVolumeOsd(null), 900)
+  }
+  useEffect(() => () => window.clearTimeout(osdTimer.current), [])
 
   const expanded = view !== 'collapsed'
   const { trigger } = settings
@@ -132,8 +143,13 @@ function Widget({ settings, layout, state, palette }: WidgetProps): React.JSX.El
   // Fare tekerleğiyle ses
   const onWheel = (e: React.WheelEvent): void => {
     if ((e.target as Element).closest('[data-scroll]')) return // listeleri kaydırırken değil
-    const delta = e.deltaY < 0 ? 5 : -5
-    void window.mirilti.command({ type: 'setVolume', volume: Math.max(0, Math.min(100, state.volume + delta)) })
+    if (e.deltaY === 0) return
+    // Dokunmatik yüzey bir hareketle onlarca olay gönderir: en fazla 40 ms'de bir adım
+    const now = performance.now()
+    if (now - lastWheel.current < 40) return
+    lastWheel.current = now
+    volume.step(e.deltaY < 0 ? 5 : -5)
+    showVolumeOsd()
   }
 
   const selectTab = (id: TabId): void => {
@@ -154,7 +170,8 @@ function Widget({ settings, layout, state, palette }: WidgetProps): React.JSX.El
   const active = view === 'collapsed' ? pill : view === 'compact' ? compact : full
 
   const radius = settings.appearance.radius
-  const clip = insetClip(full, active, cornerRadii(layout, view, radius, pill))
+  const radii = cornerRadii(layout, view, radius, pill)
+  const clip = insetClip(full, active, radii)
   const playerHeight = compact.height
   // Oynatıcı bölümünün yüzey içindeki dikey yeri
   const playerTop = view === 'full' ? (layout.growsUp ? full.height - playerHeight : 0) : compact.y - full.y
@@ -170,6 +187,15 @@ function Widget({ settings, layout, state, palette }: WidgetProps): React.JSX.El
   return (
     <div className={`root scheme-${settings.appearance.colorScheme} ${layout.fitted ? 'fitted' : ''}`} style={rootStyle}>
       <div className="stage" style={stageShift}>
+        {/* Gölge ayrı bir katman: animasyon sırasında gizlenir, şekil oturunca belirir.
+            (Tüm yüzeye drop-shadow filtresi uygulamak her karede yeniden çizime yol açıyordu.) */}
+        {!layout.fitted && (
+          <div
+            key={view}
+            className="shadow"
+            style={{ ...rectStyle(active), borderRadius: radii.map((v) => `${v}px`).join(' ') }}
+          />
+        )}
         <div className="shadow-wrap" style={rectStyle(full)}>
           <div
             ref={surfaceRef}
@@ -181,6 +207,13 @@ function Widget({ settings, layout, state, palette }: WidgetProps): React.JSX.El
             onWheel={onWheel}
           >
             <Backdrop coverUrl={state.track?.coverUrl ?? ''} fitted={layout.fitted} />
+
+            {volumeOsd !== null && (
+              <div className="volume-osd" style={osdStyle(offsetRect(active, full))} key={volumeOsd.id}>
+                <span>{volume.value === 0 ? 'Sessiz' : `%${volume.value}`}</span>
+                <i style={{ transform: `scaleX(${volume.value / 100})` }} />
+              </div>
+            )}
 
             <Pill
               layout={layout}
@@ -206,6 +239,7 @@ function Widget({ settings, layout, state, palette }: WidgetProps): React.JSX.El
             >
               <Player
                 state={state}
+                volume={volume}
                 settings={settings}
                 active={expanded}
                 tab={view === 'full' ? tab : null}
@@ -240,6 +274,11 @@ function scaleRect(r: Rect, k: number): Rect {
 /** r'yi kapsayıcı c'ye göre göreli yap */
 function offsetRect(r: Rect, c: Rect): Rect {
   return { x: r.x - c.x, y: r.y - c.y, width: r.width, height: r.height }
+}
+
+/** Ses göstergesi: görünen alanın ortasında */
+function osdStyle(r: Rect): CSSProperties {
+  return { left: r.x + r.width / 2, top: r.y + r.height / 2 }
 }
 
 function rectStyle(r: Rect): CSSProperties {

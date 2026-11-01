@@ -80,6 +80,10 @@ export function createPlayerWindow(): BrowserWindow {
     scheduleRetry()
   })
 
+  // YouTube Music, müzik çalarken "sayfadan ayrılmak istiyor musun?" (beforeunload) ile kapanmayı
+  // engeller. Gizli pencerede bu soru görünmez ve uygulama hiç kapanamaz; engeli yok say.
+  contents.on('will-prevent-unload', (e) => e.preventDefault())
+
   // Sayfa çökerse yeniden yükle
   contents.on('render-process-gone', (_e, details) => {
     console.warn('[player] sayfa süreci kapandı:', details.reason)

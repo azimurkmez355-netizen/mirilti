@@ -22,6 +22,7 @@ import {
 import type { PlayerCommand } from '../../../shared/ipc'
 import type { Settings } from '../../../shared/settings'
 import type { PlayerState } from '../../../shared/types'
+import type { VolumeHandle } from '../../common/hooks'
 import { ProgressBar } from './ProgressBar'
 import { StatusBanner } from './StatusBanner'
 import type { TabId } from './TabContent'
@@ -29,6 +30,7 @@ import { VolumeControl } from './VolumeControl'
 
 interface Props {
   state: PlayerState
+  volume: VolumeHandle
   settings: Settings
   active: boolean
   tab: TabId | null
@@ -39,7 +41,7 @@ const send = (cmd: PlayerCommand): void => {
   void window.mirilti.command(cmd as never)
 }
 
-export function Player({ state, settings, active, tab, onSelectTab }: Props): React.JSX.Element {
+export function Player({ state, volume, settings, active, tab, onSelectTab }: Props): React.JSX.Element {
   const t = state.track
   const sec = settings.sections
   const liked = state.likeStatus === 'LIKE'
@@ -123,7 +125,7 @@ export function Player({ state, settings, active, tab, onSelectTab }: Props): Re
       </div>
 
       <div className="player-foot">
-        {sec.volume ? <VolumeControl state={state} /> : <span />}
+        {sec.volume ? <VolumeControl state={state} volume={volume} /> : <span />}
         <div className="tabs">
           {tabs
             .filter((x) => x.on)

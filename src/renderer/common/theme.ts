@@ -7,7 +7,7 @@ import type { Settings } from '../../shared/settings'
 import type { CoverPalette } from '../../shared/types'
 
 /** Temel animasyon süresi (ms); hız ayarına bölünür */
-const BASE_DURATION = 320
+const BASE_DURATION = 260
 
 export function themeVars(settings: Settings, palette: CoverPalette | null): CSSProperties {
   const a = settings.appearance

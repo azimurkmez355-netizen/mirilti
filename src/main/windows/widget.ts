@@ -9,7 +9,7 @@
  *     görünen şeklin (pill / oynatıcı / sekmeler) boyutuna göre yeniden boyutlanır.
  */
 import os from 'node:os'
-import { BrowserWindow, ipcMain, screen, type IpcMainEvent } from 'electron'
+import { app, BrowserWindow, ipcMain, screen, type IpcMainEvent } from 'electron'
 import { IPC } from '../../shared/ipc'
 import type { Settings } from '../../shared/settings'
 import type { Rect, WidgetView } from '../../shared/types'
@@ -19,6 +19,10 @@ import { getSettings, onSettingsChange, updateSettings } from '../store'
 import { refreshTrayMenu } from '../tray'
 
 let win: BrowserWindow | null = null
+let quitting = false
+app.on('before-quit', () => {
+  quitting = true
+})
 let placement: Placement | null = null
 let view: WidgetView = 'collapsed'
 /** Kullanıcı tepsiden gizledi */
@@ -81,8 +85,16 @@ export function createWidgetWindow(): BrowserWindow {
   else win.setIgnoreMouseEvents(true, { forward: true })
 
   win.once('ready-to-show', () => syncVisibility())
+  // Alt+F4 ya da Windows'un "kapat" komutu widget'ı yok etmesin: yalnızca uygulama kapanırken kapanır.
+  win.on('close', (e) => {
+    if (!quitting) e.preventDefault()
+  })
   win.on('closed', () => {
     win = null
+  })
+  // Arayüz süreci çökerse widget'ı yeniden yükle (ekranda boşluk kalmasın)
+  win.webContents.on('render-process-gone', () => {
+    if (!quitting) setTimeout(recreate, 500)
   })
   void loadRenderer(win, 'widget')
   return win
@@ -92,6 +104,7 @@ export function createWidgetWindow(): BrowserWindow {
 function recreate(): void {
   const old = getWidgetWindow()
   win = null
+  // destroy(), 'close' olayını tetiklemeden pencereyi kaldırır
   old?.destroy()
   createWidgetWindow()
 }
